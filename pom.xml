@@ -54,6 +54,13 @@
         </exclusions>
     </dependency>
   </dependencies>
+  <distributionManagement>
+     <repository>
+       <id>github</id>
+       <name>GitHub wasan-sah Apache Maven Packages</name>
+       <url>https://maven.pkg.github.com/wasan-sah/jthaipdf</url>
+     </repository>
+  </distributionManagement>
   <build>
       <finalName>jthaipdf</finalName>
       <plugins>
