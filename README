@@ -3,13 +3,44 @@ JThaiPDF
 The Thai language PDF generating utilities for Java
 ==========================================================================
 
-Using from iText:
-  - just replace all Chunk class with ThaiChunk
-  - or wrap Chunk instant inside ThaiChunk class
+Targets JasperReports 7.x (net.sf.jasperreports.pdf.JRPdfExporter).
 
-Using from JasperReports:
-    - replace all JRPdfExporter class with ThaiJRPdfExporter class
-    - or use ThaiExporterManager to export to file or stream
+Two ways to get correct Thai rendering:
+
+1. JasperReports built-in glyph renderer (recommended for modern TrueType
+   fonts; no jthaipdf code needed). Add this property at report or context
+   level -- Thai is NOT enabled by default:
+
+       <property name="net.sf.jasperreports.export.pdf.glyph.renderer.blocks.x"
+                 value="thai"/>
+
+   Then export with a stock JRPdfExporter and an embedded Thai TTF (e.g.
+   Sarabun). Optionally also set
+   net.sf.jasperreports.export.pdf.glyph.renderer.add.actual.text=true so
+   copied text keeps its logical character order.
+
+2. jthaipdf's glyph rearrangement (use when your embedded font carries the
+   legacy Thai Private Use Area glyphs, 0xF7xx -- many common Thai fonts do,
+   e.g. TH Sarabun New):
+
+       - replace JRPdfExporter with ThaiJRPdfExporter, or
+       - use ThaiExporterManager to export to a file or stream
+
+   ThaiDisplayUtils.toDisplayString(String) is public and standalone if you
+   need to apply the rearrangement yourself.
+
+Pick whichever renders the stacking correctly with the fonts you actually
+ship. Option 1 works with any Thai TTF; option 2 needs a font that includes
+the legacy PUA glyphs (many do). PdfRenderHarnessTest (under src/test) renders
+both ways to target/thai-native.pdf and target/thai-library.pdf for comparison.
+
+NOTE (2.0.0-jr7): upgraded from JasperReports 4.0.1 to 7.x. The exporter API
+changed (getChunk now returns net.sf.jasperreports.pdf.common.PdfTextChunk and
+receives the chunk text as a String; JRExporterParameter was removed). The old
+iText helper ThaiChunk (com.lowagie.text.Chunk subclass) has been removed --
+the modern PDF layer is abstracted behind a producer, so direct-iText usage is
+no longer provided; call ThaiDisplayUtils directly if you need it.
 
 
 Author: Virask Dungsriakaew (virask@gmail.com)
+JasperReports 7.x upgrade (2.0.0-jr7): Wasan Anusornhirunkarn (wasan@sah.co.th)

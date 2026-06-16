@@ -23,21 +23,41 @@
  */
 package com.googlecode.jthaipdf.jasperreports.engine.export;
 
+import java.text.AttributedCharacterIterator;
 import java.util.Locale;
 import java.util.Map;
 
-import net.sf.jasperreports.engine.export.JRPdfExporter;
+import net.sf.jasperreports.pdf.JRPdfExporter;
+import net.sf.jasperreports.pdf.common.PdfTextChunk;
 
-import com.googlecode.jthaipdf.itext.ThaiChunk;
-import com.lowagie.text.Chunk;
+import com.googlecode.jthaipdf.util.ThaiDisplayUtils;
 
 
+/**
+ * A {@link JRPdfExporter} (JasperReports 7.x, {@code net.sf.jasperreports.pdf})
+ * that rearranges Thai glyphs so combining vowels and tone marks do not overlap
+ * the base consonant in the exported PDF.
+ *
+ * <p>Unlike the JasperReports 4.x version, this no longer wraps an iText
+ * {@code Chunk}: the modern exporter passes the chunk text in as a {@code String}
+ * and builds the (producer-agnostic) {@link PdfTextChunk} itself, so we only need
+ * to transform the text with {@link ThaiDisplayUtils#toDisplayString(String)}
+ * before delegating to the superclass.
+ *
+ * <p>Note: this approach maps characters onto Private Use Area glyphs and
+ * therefore requires an embedded font that carries the legacy Thai PUA glyph set.
+ * For modern TrueType fonts, prefer JasperReports' built-in glyph renderer by
+ * setting the report/context property
+ * {@code net.sf.jasperreports.export.pdf.glyph.renderer.blocks.x=thai}.
+ *
+ * @author Virasak Dungsrikaew (virasak@gmail.com)
+ * @author Wasan Anusornhirunkarn (wasan@sah.co.th) - JasperReports 7.x upgrade
+ */
 public class ThaiJRPdfExporter extends JRPdfExporter {
 
-	
-	@SuppressWarnings("rawtypes")
 	@Override
-	protected Chunk getChunk(Map attributes, String text, Locale locale) {
-		return new ThaiChunk(super.getChunk(attributes, text, locale));
+	protected PdfTextChunk getChunk(Map<AttributedCharacterIterator.Attribute, Object> attributes,
+			String text, Locale locale) {
+		return super.getChunk(attributes, ThaiDisplayUtils.toDisplayString(text), locale);
 	}
 }

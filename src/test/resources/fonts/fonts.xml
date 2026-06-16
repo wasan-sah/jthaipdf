@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fontFamilies>
+  <fontFamily name="TH Sarabun New">
+    <normal>fonts/THSarabunNew.ttf</normal>
+    <bold>fonts/THSarabunNew.ttf</bold>
+    <italic>fonts/THSarabunNew.ttf</italic>
+    <boldItalic>fonts/THSarabunNew.ttf</boldItalic>
+    <pdfEncoding>Identity-H</pdfEncoding>
+    <pdfEmbedded>true</pdfEmbedded>
+  </fontFamily>
+</fontFamilies>
