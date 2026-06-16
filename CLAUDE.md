@@ -4,12 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-JThaiPDF is a small Java library that fixes Thai-language rendering in PDFs generated via iText (the legacy `com.lowagie.text` / OpenPDF API) and JasperReports. It is published as the `com.googlecode.jthaipdf:jthaipdf` JAR.
+JThaiPDF is a small Java library that fixes Thai-language rendering in JasperReports PDF output. As of `2.0.0-jr7` it targets **JasperReports 7.x** (`net.sf.jasperreports.pdf`); earlier `1.x` targeted JasperReports 4.0.1 and the legacy iText `com.lowagie.text` API. It is published as the `com.googlecode.jthaipdf:jthaipdf` JAR.
+
+Note that JasperReports 7.x has a **native** fix for this exact problem — the report/context property `net.sf.jasperreports.export.pdf.glyph.renderer.blocks.x=thai` makes JR shape Thai via Java/AWT, with no PUA-font dependency. This library is the alternative for fonts that ship the legacy Thai PUA glyph set; see `README`.
 
 ## Build & publish
 
-- Build / package: `mvn -B package` (compiles to Java 1.8, `target/jthaipdf.jar`)
-- The project targets Java 8 but the CI workflow builds on JDK 11. There are **no tests** — JUnit is declared but `src/test` does not exist, so `mvn test` is a no-op.
+- Build / package: `mvn -B package` (compiles with `--release 11`, `target/jthaipdf.jar`)
+- Requires JDK 11+ (JasperReports 7.x minimum). There are **no tests** — JUnit is declared but `src/test` does not exist, so `mvn test` is a no-op.
 - Publishing is driven by Maven profiles selected with `-Drepository=...`:
   - GitHub Packages: `mvn deploy -Drepository=github` (CI does this automatically on GitHub release via `.github/workflows/maven-publish.yml`, which needs a `settings.xml` providing `GITHUB_TOKEN`).
   - Google Artifact Registry: `mvn deploy -Drepository=gar` (uses the `artifactregistry-maven-wagon` extension; requires GCP auth, e.g. `gcloud auth application-default login`).
@@ -20,13 +22,11 @@ The whole library exists to solve one problem: Thai text stacks combining vowels
 
 - `util/ThaiDisplayUtils.java` — the core algorithm and the only place with real logic. `toDisplayString(...)` walks the character array, classifies each char by level (upper level 1, upper level 2, lower level) and by the tail shape of the preceding base consonant (up-tail / down-tail), then substitutes PUA variants via `shiftLeft`, `pullDown`, `pullDownAndShiftLeft`, and `cutTail`. It also explodes SARA_AM (ำ) into NIKHAHIT + SARA_AA before processing. All the `0xExx` (standard Thai) → `0xF7xx` (PUA) mappings are the `public static final char` constants at the bottom of the file. **When changing glyph behavior, edit the classification predicates and the switch-based mappers here** — the rules are positional and order-dependent, so the loop's look-back logic (`pch`, the `i-2` adjustment for lower-level chars) matters.
 
-- `itext/ThaiChunk.java` — drop-in subclass of iText `Chunk`. Each constructor calls `manageContent()`, which runs `ThaiDisplayUtils.toDisplayString` over the inherited `content` field in place. Usage: replace `Chunk` with `ThaiChunk`, or wrap an existing `Chunk`. The "wrap a Chunk" constructor exists specifically to preserve styling (e.g. underline) that is lost if you rebuild from a raw string.
+- `jasperreports/engine/export/ThaiJRPdfExporter.java` — subclass of `net.sf.jasperreports.pdf.JRPdfExporter` (JR 7.x). It overrides `protected PdfTextChunk getChunk(Map<AttributedCharacterIterator.Attribute,Object>, String text, Locale)` and rearranges `text` with `ThaiDisplayUtils.toDisplayString(text)` **before** delegating to `super.getChunk(...)`. Because the JR 7.x PDF layer is abstracted behind a producer (the chunk text arrives as a `String` and the framework builds the `PdfTextChunk`), no chunk-wrapping is needed — this is why the old iText `ThaiChunk` was removed in 2.0.0-jr7.
 
-- `jasperreports/engine/export/ThaiJRPdfExporter.java` — subclass of JasperReports `JRPdfExporter` that overrides `getChunk(...)` to wrap every chunk in a `ThaiChunk`. This is how Thai correction is injected into the JasperReports PDF export pipeline.
-
-- `jasperreports/engine/ThaiExporterManager.java` — thin convenience wrapper exposing `exportReportToPdfFile` / `exportReportToPdfStream` so callers don't have to configure `ThaiJRPdfExporter` parameters by hand.
+- `jasperreports/engine/ThaiExporterManager.java` — thin convenience wrapper (`exportReportToPdfFile` / `exportReportToPdfStream`). Uses the JR 7.x fluent API (`SimpleExporterInput` + `SimpleOutputStreamExporterOutput`); the old `JRExporterParameter` constants were removed upstream.
 
 ## Conventions
 
-- Targets the **old iText API under `com.lowagie.text`** (OpenPDF lineage), not modern iText 5/7. JasperReports is pinned to 4.0.1 with many transitive deps excluded in `pom.xml`; both are old and intentionally so.
-- The PUA codepoints assume a font that ships the Thai PUA glyph set (the standard Acrobat/Adobe Thai font layout). The mapping is meaningless without such a font in the PDF.
+- The override hook is producer-agnostic: it works whether JasperReports uses the default OpenPDF "classic" producer (`jasperreports-pdf`) or iText 7 (`jasperreports-pdf-lib7`).
+- The PUA codepoints assume a font that ships the Thai PUA glyph set (the standard Acrobat/Adobe Thai font layout). The mapping is meaningless without such a font — for ordinary modern TTFs, use the native `glyph.renderer.blocks.x=thai` property instead (see top of this file).
