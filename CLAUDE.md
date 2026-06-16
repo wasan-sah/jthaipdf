@@ -10,8 +10,9 @@ Note that JasperReports 7.x has a **native** fix for this exact problem — the 
 
 ## Build & publish
 
-- Build / package: `mvn -B package` (compiles with `--release 11`, `target/jthaipdf.jar`)
-- Requires JDK 11+ (JasperReports 7.x minimum). There are **no tests** — JUnit is declared but `src/test` does not exist, so `mvn test` is a no-op.
+- Build / package: `mvn -B package` (compiles with `--release 17`, `target/jthaipdf.jar`)
+- Requires JDK 17+. The compiler targets release 17 and tests use JUnit 6 (which itself requires Java 17); JasperReports 7.0.7 is actually Java 8 bytecode, so the floor comes from the toolchain, not JR.
+- Tests: `mvn test` runs `ThaiDisplayUtilsTest` (JUnit 5/Jupiter API, via surefire). They cover the `ThaiDisplayUtils` glyph algorithm only — there is no PDF-rendering test.
 - Publishing is driven by Maven profiles selected with `-Drepository=...`:
   - GitHub Packages: `mvn deploy -Drepository=github` (CI does this automatically on GitHub release via `.github/workflows/maven-publish.yml`, which needs a `settings.xml` providing `GITHUB_TOKEN`).
   - Google Artifact Registry: `mvn deploy -Drepository=gar` (uses the `artifactregistry-maven-wagon` extension; requires GCP auth, e.g. `gcloud auth application-default login`).

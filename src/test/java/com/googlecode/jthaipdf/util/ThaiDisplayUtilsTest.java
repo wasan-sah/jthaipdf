@@ -8,9 +8,9 @@ import static com.googlecode.jthaipdf.util.ThaiDisplayUtils.SARA_AA;
 import static com.googlecode.jthaipdf.util.ThaiDisplayUtils.SARA_AM;
 import static com.googlecode.jthaipdf.util.ThaiDisplayUtils.SARA_I;
 import static com.googlecode.jthaipdf.util.ThaiDisplayUtils.SARA_I_LEFT_SHIFT;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Characterization tests for the Thai glyph-rearrangement algorithm. The
