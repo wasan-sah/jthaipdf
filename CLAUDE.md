@@ -11,8 +11,10 @@ Note that JasperReports 7.x has a **native** fix for this exact problem — the 
 ## Build & publish
 
 - Build / package: `mvn -B package` (compiles with `--release 17`, `target/jthaipdf.jar`)
-- Requires JDK 17+. The compiler targets release 17 and tests use JUnit 6 (which itself requires Java 17); JasperReports 7.0.7 is actually Java 8 bytecode, so the floor comes from the toolchain, not JR.
-- Tests: `mvn test` runs `ThaiDisplayUtilsTest` (JUnit 5/Jupiter API, via surefire). They cover the `ThaiDisplayUtils` glyph algorithm only — there is no PDF-rendering test.
+- Requires JDK 17+. The compiler targets release 17 and tests use JUnit 6 (which itself requires Java 17); JasperReports 7.0.7 is actually Java 8 bytecode, so the floor comes from the toolchain, not JR. The `maven-publish.yml` CI workflow sets up JDK 17 to match.
+- Tests (JUnit 6/Jupiter, via surefire):
+  - `ThaiDisplayUtilsTest` — characterization tests for the `ThaiDisplayUtils` glyph algorithm.
+  - `PdfRenderHarnessTest` (in `jasperreports/`) — builds a `JasperPrint` and exports two PDFs to `target/`: `thai-native.pdf` (JR's built-in glyph renderer) and `thai-library.pdf` (this library) for visual comparison across normal + edge/rare Thai cases. Its font (TH Sarabun New) is bundled and registered via `src/test/resources/jasperreports_extension.properties` (+ `fonts/`). Gotcha: a hand-built `JRPrintText` needs `setTextHeight(...)` or the PDF exporter draws nothing.
 - Publishing is driven by Maven profiles selected with `-Drepository=...`:
   - GitHub Packages: `mvn deploy -Drepository=github` (CI does this automatically on GitHub release via `.github/workflows/maven-publish.yml`, which needs a `settings.xml` providing `GITHUB_TOKEN`).
   - Google Artifact Registry: `mvn deploy -Drepository=gar` (uses the `artifactregistry-maven-wagon` extension; requires GCP auth, e.g. `gcloud auth application-default login`).
@@ -30,4 +32,4 @@ The whole library exists to solve one problem: Thai text stacks combining vowels
 ## Conventions
 
 - The override hook is producer-agnostic: it works whether JasperReports uses the default OpenPDF "classic" producer (`jasperreports-pdf`) or iText 7 (`jasperreports-pdf-lib7`).
-- The PUA codepoints assume a font that ships the Thai PUA glyph set (the standard Acrobat/Adobe Thai font layout). The mapping is meaningless without such a font — for ordinary modern TTFs, use the native `glyph.renderer.blocks.x=thai` property instead (see top of this file).
+- The PUA codepoints assume a font that ships the legacy Thai PUA glyph set (the Acrobat/Adobe Thai layout). Many common Thai fonts include it — **TH Sarabun New does**, and `PdfRenderHarnessTest` confirms this library renders correctly with it (its `thai-library.pdf` carries PUA codepoints absent from the native output). A purely modern TTF lacking those PUA glyphs would render blank marks; for that case use the native `glyph.renderer.blocks.x=thai` property instead (see top of this file).

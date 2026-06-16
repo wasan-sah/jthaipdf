@@ -20,7 +20,8 @@ Two ways to get correct Thai rendering:
    copied text keeps its logical character order.
 
 2. jthaipdf's glyph rearrangement (use when your embedded font carries the
-   legacy Thai Private Use Area glyphs, 0xF7xx):
+   legacy Thai Private Use Area glyphs, 0xF7xx -- many common Thai fonts do,
+   e.g. TH Sarabun New):
 
        - replace JRPdfExporter with ThaiJRPdfExporter, or
        - use ThaiExporterManager to export to a file or stream
@@ -29,7 +30,9 @@ Two ways to get correct Thai rendering:
    need to apply the rearrangement yourself.
 
 Pick whichever renders the stacking correctly with the fonts you actually
-ship. For modern TTFs, option 1 usually wins.
+ship. Option 1 works with any Thai TTF; option 2 needs a font that includes
+the legacy PUA glyphs (many do). PdfRenderHarnessTest (under src/test) renders
+both ways to target/thai-native.pdf and target/thai-library.pdf for comparison.
 
 NOTE (2.0.0-jr7): upgraded from JasperReports 4.0.1 to 7.x. The exporter API
 changed (getChunk now returns net.sf.jasperreports.pdf.common.PdfTextChunk and
